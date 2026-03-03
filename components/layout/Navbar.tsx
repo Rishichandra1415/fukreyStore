@@ -1,15 +1,37 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Search, ShoppingCart, User, Menu, X } from "lucide-react";
+import { Search, ShoppingCart, User, Menu, X, LogIn } from "lucide-react";
 import { useCartStore } from "@/lib/store/useCartStore";
+import { supabase } from "@/lib/supabase";
 import CartDrawer from "../cart/CartDrawer";
 
 const Navbar = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isCartOpen, setIsCartOpen] = useState(false);
+    const [user, setUser] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
+
     const totalItems = useCartStore((state) => state.getTotalItems());
+
+    useEffect(() => {
+        // Initial session check
+        const checkUser = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            setUser(session?.user ?? null);
+            setLoading(false);
+        };
+
+        checkUser();
+
+        // Listen for auth changes
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            setUser(session?.user ?? null);
+        });
+
+        return () => subscription.unsubscribe();
+    }, []);
 
     return (
         <>
@@ -37,7 +59,7 @@ const Navbar = () => {
                         {/* Logo (Centered) */}
                         <div className="absolute left-1/2 -translate-x-1/2">
                             <Link href="/" className="group">
-                                <h1 className="text-2xl md:text-3xl font-black tracking-tighter text-black dark:text-white">
+                                <h1 className="text-2xl md:text-3xl font-black tracking-tighter text-black dark:text-white uppercase italic">
                                     FUKREY<span className="text-red-600 group-hover:animate-pulse">.</span>
                                 </h1>
                             </Link>
@@ -45,13 +67,26 @@ const Navbar = () => {
 
                         {/* Icons (Right) */}
                         <div className="flex items-center space-x-1 sm:space-x-3">
-                            <button className="p-2 rounded-full text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-zinc-800 transition-all duration-200 group">
+                            <button className="hidden sm:flex p-2 rounded-full text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-zinc-800 transition-all duration-200 group">
                                 <Search size={22} className="group-hover:scale-110 transition-transform" />
                             </button>
 
-                            <Link href="/profile" className="p-2 rounded-full text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-zinc-800 transition-all duration-200 group">
-                                <User size={22} className="group-hover:scale-110 transition-transform" />
-                            </Link>
+                            {/* Dynamic Auth Button */}
+                            {!loading && (
+                                user ? (
+                                    <Link href="/profile" className="p-2 rounded-full text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-zinc-800 transition-all duration-200 group">
+                                        <User size={22} className="group-hover:scale-110 transition-transform" />
+                                    </Link>
+                                ) : (
+                                    <Link
+                                        href="/login"
+                                        className="flex items-center gap-2 px-4 py-2 bg-black dark:bg-white text-white dark:text-black rounded-xl text-xs font-black uppercase tracking-widest transition-all hover:scale-[1.05] active:scale-[0.98] shadow-lg shadow-black/10 dark:shadow-white/5"
+                                    >
+                                        <LogIn size={16} />
+                                        <span className="hidden md:inline">Login</span>
+                                    </Link>
+                                )
+                            )}
 
                             <button
                                 onClick={() => setIsCartOpen(true)}

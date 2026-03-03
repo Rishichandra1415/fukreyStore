@@ -135,7 +135,7 @@ export default function CheckoutPage() {
                                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                                         <div className="space-y-2">
                                             <label className="text-xs font-bold uppercase tracking-wider text-zinc-500">Pincode</label>
-                                            <input required type="text" value={formData.pincode} onChange={e => setFormData({ ...formData, pincode: e.target.value })} className="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3 focus:ring-2 focus:ring-black dark:focus:ring-white outline-none transition-all" placeholder="110001" />
+                                            <input required type="text" value={formData.pincode} onChange={e => setFormData({ ...formData, pincode: e.target.value })} className="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3 focus:ring-2 focus:ring-black dark:focus:ring-white outline-none transition-all" placeholder="110001" maxLength={6} />
                                         </div>
                                         <div className="space-y-2">
                                             <label className="text-xs font-bold uppercase tracking-wider text-zinc-500">City</label>
@@ -146,6 +146,33 @@ export default function CheckoutPage() {
                                             <input required type="text" value={formData.state} onChange={e => setFormData({ ...formData, state: e.target.value })} className="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3 focus:ring-2 focus:ring-black dark:focus:ring-white outline-none transition-all" placeholder="Delhi" />
                                         </div>
                                     </div>
+
+                                    {/* Smart Delivery Badge */}
+                                    {formData.pincode.length >= 3 && (
+                                        <div className="mt-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                                            {formData.pincode.startsWith('800') ? (
+                                                <div className="bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800/50 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+                                                    <div className="bg-green-100 dark:bg-green-900/50 p-2 rounded-lg flex items-center justify-center shrink-0 w-fit">
+                                                        <span className="text-xl">🚀</span>
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="text-green-800 dark:text-green-400 font-bold text-sm">Fukrey Express Delivery</h4>
+                                                        <p className="text-green-700 dark:text-green-500/80 text-xs mt-0.5">24-48 Hour Delivery Available in Patna</p>
+                                                    </div>
+                                                </div>
+                                            ) : formData.pincode.length === 6 ? (
+                                                <div className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+                                                    <div className="bg-zinc-200 dark:bg-zinc-800 p-2 rounded-lg flex items-center justify-center shrink-0 w-fit">
+                                                        <span className="text-xl">📦</span>
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="text-zinc-800 dark:text-zinc-200 font-bold text-sm">Standard Pan-India Shipping</h4>
+                                                        <p className="text-zinc-600 dark:text-zinc-400 text-xs mt-0.5">Estimated delivery: 5-7 Days</p>
+                                                    </div>
+                                                </div>
+                                            ) : null}
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Payment Method */}
