@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { createBrowserClient } from "@supabase/ssr";
+import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import { Mail, Lock, Loader2, ArrowRight, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
@@ -9,11 +9,6 @@ import Link from "next/link";
 export default function LoginPage() {
     const router = useRouter();
 
-    // Use @supabase/ssr browser client
-    const supabase = createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
 
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -89,8 +84,8 @@ export default function LoginPage() {
                     <form onSubmit={handleAuth} className="space-y-6">
                         {message && (
                             <div className={`p-5 rounded-2xl flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300 ${message.type === "success"
-                                    ? "bg-green-50 dark:bg-green-950/30 border border-green-100 dark:border-green-900/30 text-green-700 dark:text-green-400"
-                                    : "bg-red-50 dark:bg-red-950/30 border border-red-100 dark:border-red-900/30 text-red-600 dark:text-red-400"
+                                ? "bg-green-50 dark:bg-green-950/30 border border-green-100 dark:border-green-900/30 text-green-700 dark:text-green-400"
+                                : "bg-red-50 dark:bg-red-950/30 border border-red-100 dark:border-red-900/30 text-red-600 dark:text-red-400"
                                 }`}>
                                 {message.type === "success" ? <CheckCircle2 className="shrink-0 mt-0.5" size={18} /> : <Mail className="shrink-0 mt-0.5" size={18} />}
                                 <p className="text-xs font-bold leading-relaxed">{message.text}</p>

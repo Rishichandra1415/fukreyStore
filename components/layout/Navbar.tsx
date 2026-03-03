@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Search, ShoppingCart, User, Menu, X, LogIn } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Search, ShoppingCart, User, Menu, X, LogIn, LogOut } from "lucide-react";
 import { useCartStore } from "@/lib/store/useCartStore";
 import { supabase } from "@/lib/supabase";
 import CartDrawer from "../cart/CartDrawer";
@@ -12,8 +13,13 @@ const Navbar = () => {
     const [isCartOpen, setIsCartOpen] = useState(false);
     const [user, setUser] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [mounted, setMounted] = useState(false);
+    const [profile, setProfile] = useState<{ full_name: string | null; role: string | null } | null>(null);
+    const [profileLoading, setProfileLoading] = useState(false);
+    const router = useRouter();
 
     const totalItems = useCartStore((state) => state.getTotalItems());
+    const clearCart = useCartStore((state) => state.clearCart);
 
     useEffect(() => {
         // Initial session check
@@ -24,6 +30,7 @@ const Navbar = () => {
         };
 
         checkUser();
+        setMounted(true);
 
         // Listen for auth changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -32,6 +39,34 @@ const Navbar = () => {
 
         return () => subscription.unsubscribe();
     }, []);
+
+    useEffect(() => {
+        const fetchProfile = async (userId: string) => {
+            setProfileLoading(true);
+            const { data, error } = await supabase
+                .from("profiles")
+                .select("full_name, role")
+                .eq("id", userId)
+                .single();
+
+            if (!error && data) {
+                setProfile(data);
+            }
+            setProfileLoading(false);
+        };
+
+        if (user) {
+            fetchProfile(user.id);
+        } else {
+            setProfile(null);
+        }
+    }, [user]);
+
+    const handleLogout = async () => {
+        await supabase.auth.signOut();
+        clearCart();
+        router.push("/");
+    };
 
     return (
         <>
@@ -66,40 +101,64 @@ const Navbar = () => {
                         </div>
 
                         {/* Icons (Right) */}
-                        <div className="flex items-center space-x-1 sm:space-x-3">
+                        <div className="flex items-center space-x-1 sm:space-x-3 transition-opacity duration-300">
                             <button className="hidden sm:flex p-2 rounded-full text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-zinc-800 transition-all duration-200 group">
                                 <Search size={22} className="group-hover:scale-110 transition-transform" />
                             </button>
 
-                            {/* Dynamic Auth Button */}
-                            {!loading && (
+                            {mounted && !loading && (
                                 user ? (
-                                    <Link href="/profile" className="p-2 rounded-full text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-zinc-800 transition-all duration-200 group">
-                                        <User size={22} className="group-hover:scale-110 transition-transform" />
-                                    </Link>
+                                    <>
+                                        {/* Logged In UI: Personalized Greeting, Profile, Cart, and Logout */}
+                                        <div className="hidden md:flex flex-col items-end mr-2">
+                                            <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest leading-none">
+                                                {profileLoading ? (
+                                                    <span className="animate-pulse">Loading...</span>
+                                                ) : (
+                                                    profile?.role === "admin" ? "Welcome, Boss" : `Welcome, ${profile?.full_name?.split(' ')[0] || 'Explorer'}`
+                                                )}
+                                            </span>
+                                        </div>
+
+                                        <Link
+                                            href="/profile"
+                                            className="p-2 rounded-full text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-zinc-800 transition-all duration-200 group"
+                                        >
+                                            <User size={22} className="group-hover:scale-110 transition-transform" />
+                                        </Link>
+
+                                        <button
+                                            onClick={() => setIsCartOpen(true)}
+                                            className="relative p-2 rounded-full text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-zinc-800 transition-all duration-200 group"
+                                        >
+                                            <ShoppingCart size={22} className="group-hover:scale-110 transition-transform" />
+                                            {/* Notification Badge */}
+                                            {totalItems > 0 && (
+                                                <span className="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white ring-2 ring-white dark:ring-zinc-950">
+                                                    {totalItems}
+                                                </span>
+                                            )}
+                                        </button>
+
+                                        <button
+                                            onClick={handleLogout}
+                                            className="flex items-center gap-2 px-4 py-2 border-2 border-zinc-200 dark:border-zinc-800 text-black dark:text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all hover:bg-red-50 hover:text-red-600 hover:border-red-100 dark:hover:bg-red-950/30 dark:hover:text-red-400 group"
+                                        >
+                                            <LogOut size={16} className="group-hover:scale-110 transition-transform" />
+                                            <span className="hidden md:inline">Logout</span>
+                                        </button>
+                                    </>
                                 ) : (
+                                    /* Logged Out UI: Only Login Button */
                                     <Link
                                         href="/login"
                                         className="flex items-center gap-2 px-4 py-2 bg-black dark:bg-white text-white dark:text-black rounded-xl text-xs font-black uppercase tracking-widest transition-all hover:scale-[1.05] active:scale-[0.98] shadow-lg shadow-black/10 dark:shadow-white/5"
                                     >
                                         <LogIn size={16} />
-                                        <span className="hidden md:inline">Login</span>
+                                        <span>Login</span>
                                     </Link>
                                 )
                             )}
-
-                            <button
-                                onClick={() => setIsCartOpen(true)}
-                                className="relative p-2 rounded-full text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-zinc-800 transition-all duration-200 group"
-                            >
-                                <ShoppingCart size={22} className="group-hover:scale-110 transition-transform" />
-                                {/* Notification Badge */}
-                                {totalItems > 0 && (
-                                    <span className="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white ring-2 ring-white dark:ring-zinc-950">
-                                        {totalItems}
-                                    </span>
-                                )}
-                            </button>
                         </div>
                     </div>
                 </div>
